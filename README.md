@@ -6,49 +6,65 @@
 
 # Overview
 
-Mini ChatGBT is a modular open-source conversational AI framework designed to demonstrate the architecture and engineering principles behind modern language models.
+Mini ChatGBT is an open-source conversational artificial intelligence framework designed to demonstrate how modern language models are engineered, trained, evaluated, and deployed within a modular software architecture.
 
-The project implements a full conversational AI pipeline including:
+The project was created as a transparent educational platform that exposes the full lifecycle of an AI system. Instead of focusing only on generating responses, the system demonstrates how a language model interacts with multiple supporting subsystems including tokenization, dataset preparation, training pipelines, inference engines, conversation memory, vector retrieval systems, and analytics utilities.
 
-• dataset preparation  
-• tokenization  
-• vocabulary encoding  
+Modern AI platforms are typically extremely large and complex. Many of them hide important implementation details behind proprietary systems or massive infrastructure layers. Mini ChatGBT takes the opposite approach by exposing each stage of the AI pipeline through a clearly organized modular architecture.
+
+The system is designed to allow developers, researchers, and engineers to inspect how conversational AI systems operate internally while still maintaining enough flexibility to experiment with new ideas and improvements.
+
+Mini ChatGBT is intended to become a **community-driven conversational AI platform** where developers can contribute improvements to model architecture, training strategies, dataset quality, and system performance.
+
+---
+
+# Project Goals
+
+The goal of this repository is to demonstrate the engineering principles required to construct a complete conversational AI pipeline.
+
+Instead of building only a neural model, the system implements the surrounding infrastructure that real-world AI applications require.
+
+The project demonstrates:
+
+• dataset preparation pipelines  
+• tokenization and vocabulary encoding  
 • neural language model training  
-• inference generation  
-• conversation memory  
+• probabilistic token prediction  
+• conversational inference engines  
+• context-aware memory systems  
 • vector similarity retrieval  
-• external information lookup  
+• external information augmentation  
+• modular AI architecture design  
+• unit testing and system validation  
 
-The system is designed for transparency and experimentation. Each component of the AI system is separated into independent modules so contributors can study and modify specific parts of the architecture.
-
-This repository is intended to serve as a **community-driven conversational AI system** where developers can collaboratively improve the model architecture, training process, and dataset quality.
+By implementing these components together, the repository illustrates how machine learning systems evolve from research models into production-capable software platforms.
 
 ---
 
 # Core Design Philosophy
 
-Modern AI systems are extremely large and difficult to study. Mini ChatGBT intentionally implements a simplified architecture that exposes every stage of the pipeline.
+Mini ChatGBT follows several engineering principles that are commonly used in large-scale software systems.
 
-The system follows several design principles:
+### Modularity
 
-**Modularity**
+Each major component of the system exists in its own module. This separation ensures that individual components can be modified or replaced without affecting unrelated parts of the system.
 
-Each major subsystem is implemented in a separate module.
+### Transparency
 
-**Transparency**
+All model behavior and system interactions are explicitly visible within the codebase. Developers can trace the complete path from raw input text to generated output.
 
-All model behavior can be traced and inspected.
+### Reproducibility
 
-**Reproducibility**
+Training pipelines and inference processes are deterministic and repeatable. This ensures that experiments can be reliably reproduced and evaluated.
 
-Training and inference pipelines are deterministic and reproducible.
+### Extensibility
 
-**Extensibility**
-
-Developers can easily swap components such as tokenizers, training loops, or models.
+The architecture allows contributors to add new components such as improved tokenizers, alternative model architectures, improved retrieval systems, or expanded datasets.
 
 ---
 
-# Full System Pipeline
+# System Architecture
 
-The conversational AI pipeline follows a multi-stage architecture.
+The conversational AI system operates as a pipeline composed of multiple independent stages. Each stage performs a transformation on the input data before passing the result to the next component.
+
+The high-level pipeline can be visualized as follows:
