@@ -1,6 +1,6 @@
 # Senthore Language Model (SenthoreLM)
 
-![Senthore Logo](Images/senthore_logo.png)
+![Senthore Logo](Images/Image_Logo.png)
 
 ---
 
