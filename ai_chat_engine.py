@@ -1,249 +1,109 @@
 """
 ai_chat_engine.py
----------------------------------
 
-Core AI controller for MiniChatGPT.
+Core controller for the chatbot system.
 
-This file acts as the CENTRAL BRAIN of the chatbot system.
-
-It connects multiple subsystems together:
-
-1. Memory System
-   Stores conversation history so the AI remembers previous messages.
-
-2. Inference Engine
-   Runs the trained neural network model to generate responses.
-
-3. Internet Search
-   Optionally retrieves real-world information from the internet
-   to improve answers.
-
-Think of this file as the "traffic controller" of the entire AI system.
-It receives user input and decides how the system should process it.
+This module connects the main parts of the application together,
+including memory, inference, and optional internet search. It handles
+the flow of data from user input to final response output.
 """
 
-# ---------------------------------------------------------
-# Import the modules that this engine will coordinate
-# ---------------------------------------------------------
-
-# Memory system that stores the conversation history
+# Import required subsystems
+# Memory handles storing conversation history between user and AI.
+# InferenceEngine generates responses using the trained model.
+# InternetSearch retrieves external data when needed.
 from memory import Memory
-
-# AI model runtime that generates responses
 from inference import InferenceEngine
-
-# Optional internet search system
 from internet_search import InternetSearch
 
 
-# ---------------------------------------------------------
-# AIChatEngine Class
-# ---------------------------------------------------------
-
 class AIChatEngine:
     """
-    Main controller class for the chatbot.
+    Main controller for handling user input and generating responses.
 
-    Responsibilities:
-    - Store conversation history
-    - Decide when internet search should be used
-    - Send user input to the AI model
-    - Return generated responses
+    This class coordinates all subsystems and controls the response flow.
+    It ensures the model receives the correct inputs and that conversation
+    state is preserved across messages.
     """
 
     def __init__(self):
         """
-        Constructor for the AIChatEngine.
+        Initialize core components used by the chatbot.
 
-        This runs when the chatbot system first starts.
-        It initializes the subsystems required for the AI to function.
+        Each subsystem is created once and reused for the lifetime of the engine.
+        This setup allows consistent state management and avoids repeated loading.
         """
 
-        # -------------------------------------------------
-        # Memory System
-        # -------------------------------------------------
-
-        # Memory stores the conversation between the user and the AI.
-        # Without this, the AI would forget everything every message.
-        #
-        # Example memory contents:
-        #
-        # User: Hello
-        # AI: Hi there
-        # User: What is AI?
-        #
-        # This history allows the model to generate contextual replies.
+        # Stores conversation history (user + AI messages).
+        # This allows the system to maintain context across multiple turns.
+        # Without this, each response would be generated independently.
         self.memory = Memory()
 
-        # -------------------------------------------------
-        # Inference Engine
-        # -------------------------------------------------
-
-        # The inference engine loads the trained neural network
-        # and generates predictions based on user input.
-        #
-        # It performs operations like:
-        #
-        # text -> tokens -> model -> predicted token -> text
-        #
-        # This is where the AI "thinks".
+        # Handles model inference and response generation.
+        # This is where the trained model is used to produce outputs.
+        # The engine passes user input, history, and context to this component.
         self.inference = InferenceEngine()
 
-        # -------------------------------------------------
-        # Internet Search Module
-        # -------------------------------------------------
-
-        # This module allows the chatbot to fetch information
-        # from the internet when necessary.
-        #
-        # Example:
-        #
-        # User: What is the latest news about AI?
-        #
-        # The engine can query an API and retrieve real-world information.
-        #
-        # This improves answers when the model lacks knowledge.
+        # Handles optional external data lookup.
+        # This is used when the system detects that outside information may help.
+        # Not every request uses this, so it is triggered conditionally.
         self.search = InternetSearch()
-
-
-    # ---------------------------------------------------------
-    # Main Response Generation Method
-    # ---------------------------------------------------------
 
     def generate_response(self, user_input):
         """
-        This method is called whenever the user sends a message.
+        Generate a response for a given user message.
 
-        Example flow:
-
-        User types message
-             ↓
-        AIChatEngine receives it
-             ↓
-        Message stored in memory
-             ↓
-        Optional internet search performed
-             ↓
-        Model generates response
-             ↓
-        Response stored in memory
-             ↓
-        Response returned to user
+        This method controls the full processing pipeline from input to output.
+        It combines memory, optional search, and model inference into one flow.
         """
 
-        # -------------------------------------------------
-        # Step 1: Save User Message to Memory
-        # -------------------------------------------------
-
-        # Store the user input so the conversation history
-        # grows over time.
-        #
-        # Example stored entry:
-        #
-        # { "role": "user", "content": "hello" }
-        #
+        # Add user message to memory.
+        # This ensures the latest input is included in conversation history.
+        # The model will use this history when generating a response.
         self.memory.add_user_message(user_input)
 
-
-        # -------------------------------------------------
-        # Step 2: Decide if Internet Search is Needed
-        # -------------------------------------------------
-
-        # Default context is empty.
-        # Context will contain additional information
-        # retrieved from the internet if needed.
+        # Default to no external context.
+        # Context will only be populated if search is triggered.
+        # This keeps processing lightweight when external data is not needed.
         context = ""
 
-        # Check if the message contains keywords that suggest
-        # the user is asking about current or factual information.
-        #
-        # Example:
-        #
-        # "latest news"
-        # "what is quantum computing"
-        #
+        # Use search only if message suggests it.
+        # This prevents unnecessary external calls for simple messages.
+        # If triggered, search results are stored as additional context.
         if self._needs_internet_search(user_input):
             context = self.search.search(user_input)
 
-
-        # -------------------------------------------------
-        # Step 3: Retrieve Conversation History
-        # -------------------------------------------------
-
-        # This allows the model to see the previous messages
-        # in the conversation and respond more intelligently.
-        #
-        # Example:
-        #
-        # User: What is AI?
-        # AI: Artificial intelligence is...
-        #
-        # User: What about machine learning?
-        #
-        # The AI can understand the context of the conversation.
+        # Get full conversation history.
+        # This provides the model with previous messages for context.
+        # It helps maintain continuity across multiple turns.
         history = self.memory.get_history()
 
-
-        # -------------------------------------------------
-        # Step 4: Generate AI Response
-        # -------------------------------------------------
-
-        # The inference engine is responsible for actually
-        # generating the response using the trained neural network.
-        #
-        # Inputs provided to the model include:
-        #
-        # - current user message
-        # - conversation history
-        # - optional internet search results
-        #
+        # Generate response using the model.
+        # The inference engine processes input, history, and context together.
+        # The output is a generated text response.
         response = self.inference.generate(user_input, history, context)
 
-
-        # -------------------------------------------------
-        # Step 5: Save AI Response to Memory
-        # -------------------------------------------------
-
-        # Store the AI response so future messages
-        # include this in conversation history.
-        #
-        # Example stored entry:
-        #
-        # { "role": "ai", "content": "Hello! How can I help?" }
-        #
+        # Save AI response to memory.
+        # This allows future messages to reference this response.
+        # It keeps the conversation consistent over time.
         self.memory.add_ai_message(response)
 
-
-        # -------------------------------------------------
-        # Step 6: Return Response
-        # -------------------------------------------------
-
-        # The response is returned to the main program
-        # (main.py or interface.py) where it is displayed
-        # to the user.
+        # Return final output.
+        # The calling system will display or use this response.
+        # This method only handles generation, not presentation.
         return response
-
-
-    # ---------------------------------------------------------
-    # Internet Search Decision Logic
-    # ---------------------------------------------------------
 
     def _needs_internet_search(self, text):
         """
-        Determines whether the system should perform
-        an internet search.
+        Simple keyword-based check for when to use internet search.
 
-        Currently this is a simple rule-based trigger
-        based on keywords.
-
-        In a more advanced AI system this would be replaced by:
-        - intent classification
-        - semantic analysis
-        - or another neural model
+        This method looks for patterns that suggest factual or current queries.
+        It acts as a basic filter before calling the search module.
         """
 
-        # Keywords that suggest the user wants factual
-        # or current information.
+        # Keywords that indicate a need for external information.
+        # These are simple triggers based on common query patterns.
+        # This approach is lightweight but not fully accurate.
         keywords = [
             "latest",
             "news",
@@ -254,15 +114,16 @@ class AIChatEngine:
             "what is"
         ]
 
-        # Convert message to lowercase so comparisons
-        # are case-insensitive.
+        # Convert text to lowercase for consistent matching.
+        # This avoids missing matches due to capitalization.
+        # All comparisons are done against the lowercase version.
         text_lower = text.lower()
 
-        # Check if any keyword appears in the message.
+        # Return True if any keyword is found.
+        # The search stops as soon as a match is detected.
+        # If no keywords match, search is skipped.
         for word in keywords:
             if word in text_lower:
                 return True
 
-        # If no keywords are found, internet search
-        # is not required.
         return False

@@ -1,175 +1,97 @@
 """
 main.py
----------------------------------
 
-This file is the entry point for the MiniChatGPT system.
+Entry point for the MiniChatGPT application.
 
-When the program is started, THIS file runs first.
-
-Its responsibilities are:
-
-1. Start the chat interface
-2. Create the AI engine
-3. Accept user input
-4. Send user input to the AI system
-5. Display AI responses
-6. Handle exit commands and errors
-
-Think of this file as the "front door" of the AI application.
+Handles user interaction, initializes the AI engine,
+and runs the main chat loop.
 """
 
-
-# ---------------------------------------------------------
-# Import the Core AI Engine
-# ---------------------------------------------------------
-
-# AIChatEngine is the central controller that connects:
-# - memory
-# - inference (AI model)
-# - internet search
-#
-# main.py communicates ONLY with this class.
-# Everything else happens behind the scenes.
+# Import the core AI engine.
+# This is the only component main.py interacts with directly.
+# All internal logic is handled inside AIChatEngine.
 from ai_chat_engine import AIChatEngine
 
 
-# ---------------------------------------------------------
-# Chat Interface Function
-# ---------------------------------------------------------
-
 def start_chat():
     """
-    This function starts the console chat interface.
+    Start the console-based chat interface.
 
-    It displays the chat header, creates the AI engine,
-    and then continuously waits for user input.
-
-    The chat runs in a loop until the user exits.
+    Initializes the AI engine and continuously processes
+    user input until the program is exited.
     """
 
-    # Print chat header
+    # Display header for the chat session.
+    # Provides basic instructions to the user.
+    # Keeps the interface simple and readable.
     print("\n===================================")
     print("        MiniChatGPT Console")
     print("===================================")
     print("Type 'exit' or 'quit' to stop the program.\n")
 
-    # -----------------------------------------------------
-    # Initialize AI Engine
-    # -----------------------------------------------------
-
-    # Create the AI system that will process messages.
-    #
-    # Internally this initializes:
-    #
-    # AIChatEngine
-    #     ↓
-    # Memory system
-    # Inference engine (neural network)
-    # Internet search module
-    #
+    # Initialize the AI engine.
+    # This sets up memory, inference, and optional search.
+    # The engine will handle all message processing.
     engine = AIChatEngine()
 
-    # -----------------------------------------------------
-    # Main Chat Loop
-    # -----------------------------------------------------
-
-    # This loop keeps the chatbot running.
+    # Main loop for continuous interaction.
+    # Runs until the user exits or an interruption occurs.
+    # Each iteration processes one user message.
     while True:
-
         try:
-
-            # -------------------------------------------------
-            # Get User Input
-            # -------------------------------------------------
-
-            # Prompt the user to type a message.
-            # .strip() removes leading/trailing spaces.
+            # Get user input from console.
+            # strip() removes extra spaces for cleaner handling.
+            # Input is expected as plain text.
             user_input = input("You: ").strip()
 
-
-            # -------------------------------------------------
-            # Exit Conditions
-            # -------------------------------------------------
-
-            # If the user types exit or quit,
-            # stop the program.
+            # Check for exit commands.
+            # Allows user to stop the program cleanly.
+            # Comparison is case-insensitive.
             if user_input.lower() in ["exit", "quit"]:
                 print("\nMiniChatGPT shutting down.")
                 break
 
-
-            # If the user entered nothing, skip the loop
+            # Skip empty input.
+            # Prevents unnecessary processing.
+            # Keeps loop efficient.
             if user_input == "":
                 continue
 
-
-            # -------------------------------------------------
-            # Send Message to AI Engine
-            # -------------------------------------------------
-
-            # The message is sent to AIChatEngine,
-            # which processes it through several steps:
-            #
-            # 1. Save message in memory
-            # 2. Possibly perform internet search
-            # 3. Run neural network inference
-            # 4. Generate AI response
-            #
+            # Send input to AI engine.
+            # The engine handles memory, search, and inference.
+            # Returns the generated response.
             response = engine.generate_response(user_input)
 
-
-            # -------------------------------------------------
-            # Display AI Response
-            # -------------------------------------------------
-
+            # Display AI response.
+            # Output is printed to console.
+            # Formatting keeps responses readable.
             print(f"AI: {response}\n")
 
-
-        # -----------------------------------------------------
-        # Handle Ctrl+C interruption
-        # -----------------------------------------------------
-
         except KeyboardInterrupt:
-
-            # If the user presses Ctrl+C,
-            # gracefully exit the program.
+            # Handle Ctrl+C interruption.
+            # Allows graceful shutdown.
+            # Prevents abrupt termination.
             print("\n\nProgram interrupted. Exiting.")
             break
 
-
-        # -----------------------------------------------------
-        # General Error Handling
-        # -----------------------------------------------------
-
         except Exception as e:
-
-            # If something unexpected happens,
-            # show the error instead of crashing silently.
+            # Handle unexpected errors.
+            # Displays error message without crashing.
+            # Useful during development and debugging.
             print(f"\nError: {e}\n")
 
 
-# ---------------------------------------------------------
-# Main Program Entry Point
-# ---------------------------------------------------------
-
 def main():
     """
-    Main program launcher.
+    Entry function for the application.
 
-    This simply calls start_chat().
+    Starts the chat interface when the program runs.
     """
     start_chat()
 
 
-# ---------------------------------------------------------
-# Python Execution Guard
-# ---------------------------------------------------------
-
-# This ensures that main() runs ONLY when the script
-# is executed directly.
-
-# If this file is imported by another Python file,
-# the main chat loop will NOT start automatically.
-
+# Run main only if this file is executed directly.
+# Prevents the chat loop from starting on import.
+# Standard Python entry point pattern.
 if __name__ == "__main__":
     main()
