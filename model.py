@@ -1,8 +1,6 @@
 """
 model.py
---------
-
-Defines the MiniGPT language model used for training.
+Transformer-based MiniGPT (clean + optimized)
 """
 
 import torch
@@ -11,31 +9,58 @@ import torch.nn as nn
 
 class MiniGPT(nn.Module):
 
-    def __init__(self, vocab_size, embed_size, hidden_size):
+    def __init__(
+        self,
+        vocab_size,
+        embed_size=256,
+        num_heads=4,
+        num_layers=4,
+        max_seq_length=512
+    ):
         super().__init__()
 
-        # Token embedding
-        self.embedding = nn.Embedding(vocab_size, embed_size)
+        self.embed_size = embed_size
 
-        # Recurrent layer
-        self.rnn = nn.GRU(
-            input_size=embed_size,
-            hidden_size=hidden_size,
-            batch_first=True
+        # Token embedding
+        self.token_embedding = nn.Embedding(vocab_size, embed_size)
+
+        # Positional embedding
+        self.position_embedding = nn.Embedding(max_seq_length, embed_size)
+
+        # Transformer encoder layer (FIXED with batch_first)
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=embed_size,
+            nhead=num_heads,
+            batch_first=True   # 🔥 FIXES WARNING
         )
 
-        # Output layer
-        self.fc = nn.Linear(hidden_size, vocab_size)
+        # Transformer stack
+        self.transformer = nn.TransformerEncoder(
+            encoder_layer,
+            num_layers=num_layers
+        )
+
+        # Output projection
+        self.fc_out = nn.Linear(embed_size, vocab_size)
 
     def forward(self, x):
 
-        # Convert tokens to embeddings
-        x = self.embedding(x)
+        batch_size, seq_length = x.shape
 
-        # Run through GRU
-        output, _ = self.rnn(x)
+        # Create position indices
+        positions = torch.arange(0, seq_length, device=x.device)
+        positions = positions.unsqueeze(0).expand(batch_size, seq_length)
 
-        # Convert to vocabulary predictions
-        logits = self.fc(output)
+        # Embeddings
+        token_embed = self.token_embedding(x)
+        position_embed = self.position_embedding(positions)
+
+        x = token_embed + position_embed
+
+        # Transformer
+        x = self.transformer(x)
+
+        # Output logits
+        logits = self.fc_out(x)
 
         return logits

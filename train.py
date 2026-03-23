@@ -3,70 +3,50 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 import os
 import json
-import time
 
 from dataset_loader import DatasetLoader
 from model import MiniGPT
+from tokenizer import Tokenizer
 from config import Config
 
 
 def main():
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print("Device:", device)
 
-    # -----------------------
-    # Dataset
-    # -----------------------
-    dataset = DatasetLoader(Config.DATASET_PATH, Config.SEQ_LENGTH)
+    tokenizer = Tokenizer()
 
-    vocab_mapping = dataset.char_to_idx
-    VOCAB_SIZE = len(vocab_mapping)
+    dataset = DatasetLoader(Config.DATASET_PATH, tokenizer, Config.SEQ_LENGTH)
 
-    dataloader = DataLoader(
-        dataset,
-        batch_size=Config.BATCH_SIZE,
-        shuffle=True
-    )
+    dataloader = DataLoader(dataset, batch_size=Config.BATCH_SIZE, shuffle=True)
 
-    print("Vocabulary size:", VOCAB_SIZE)
-    print("Dataset size:", len(dataset))
-    print("Batches per epoch:", len(dataloader))
+    vocab = tokenizer.word2idx
+    vocab_size = len(vocab)
 
-    # -----------------------
-    # Model
-    # -----------------------
-    model = MiniGPT(
-        vocab_size=VOCAB_SIZE,
-        embed_size=Config.EMBED_SIZE,
-        hidden_size=Config.HIDDEN_SIZE
-    ).to(device)
+    print("Vocab size:", vocab_size)
+
+    model = MiniGPT(vocab_size).to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=Config.LEARNING_RATE)
     criterion = nn.CrossEntropyLoss()
-
-    # -----------------------
-    # Training Loop
-    # -----------------------
-    print("\nTraining started...\n")
 
     for epoch in range(Config.EPOCHS):
 
         total_loss = 0
 
-        print(f"Epoch {epoch+1}/{Config.EPOCHS}")
+        print(f"\nEpoch {epoch+1}/{Config.EPOCHS}")
 
-        for batch_idx, (x, y) in enumerate(dataloader):
+        for x, y in dataloader:
 
             x = x.to(device)
             y = y.to(device)
 
             optimizer.zero_grad()
 
-            outputs = model(x)
+            output = model(x)
 
             loss = criterion(
-                outputs.view(-1, VOCAB_SIZE),
+                output.view(-1, vocab_size),
                 y.view(-1)
             )
 
@@ -75,27 +55,16 @@ def main():
 
             total_loss += loss.item()
 
-            if batch_idx % 50 == 0:
-                print(
-                    f"Batch {batch_idx}/{len(dataloader)} | "
-                    f"Loss {loss.item():.4f}"
-                )
+        print(f"Loss: {total_loss / len(dataloader):.4f}")
 
-        avg_loss = total_loss / len(dataloader)
-
-        print(f"Epoch {epoch+1} finished | Avg Loss {avg_loss:.4f}\n")
-
-    # -----------------------
-    # Save model
-    # -----------------------
     os.makedirs("models", exist_ok=True)
 
     torch.save(model.state_dict(), Config.MODEL_PATH)
 
-    with open("models/vocab.json", "w", encoding="utf-8") as f:
-        json.dump(vocab_mapping, f)
+    with open("models/vocab.json", "w") as f:
+        json.dump(vocab, f)
 
-    print("\nModel and Vocabulary saved successfully.")
+    print("Training complete!")
 
 
 if __name__ == "__main__":
